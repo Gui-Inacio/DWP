@@ -53,7 +53,7 @@ export class InitialSchema1793577600000 implements MigrationInterface {
         CONSTRAINT wager_tx_currency_format CHECK (currency ~ '^[A-Z]{3}$'),
         CONSTRAINT wager_tx_observed_balance_non_negative CHECK (observed_balance IS NULL OR observed_balance >= 0),
         CONSTRAINT wager_tx_reference_required CHECK (
-          (kind IN ('REFUND','ROLLBACK')) = (reference_external_transaction_id IS NOT NULL)
+          kind NOT IN ('REFUND','ROLLBACK') OR reference_external_transaction_id IS NOT NULL
         ),
         CONSTRAINT wager_tx_failure_code_required CHECK (
           (status IN ('REJECTED','FAILED')) = (failure_code IS NOT NULL)
@@ -72,7 +72,9 @@ export class InitialSchema1793577600000 implements MigrationInterface {
         ON wager_transactions (next_reference_attempt_at)
         WHERE status = 'PENDING_REFERENCE'
     `);
-    await q.query(`CREATE INDEX wager_tx_wallet_idx ON wager_transactions (wallet_id, created_at)`);
+    await q.query(
+      `CREATE INDEX wager_tx_wallet_idx ON wager_transactions (wallet_id, created_at)`,
+    );
 
     // Estados terminais não mudam mais (PROCESSED, REJECTED, FAILED).
     await q.query(`
@@ -168,12 +170,20 @@ export class InitialSchema1793577600000 implements MigrationInterface {
   public async down(q: QueryRunner): Promise<void> {
     await q.query(`DROP TABLE IF EXISTS outbox_messages`);
     await q.query(`DROP TABLE IF EXISTS inbox_messages`);
-    await q.query(`DROP TRIGGER IF EXISTS wallet_ledger_entries_append_only_trg ON wallet_ledger_entries`);
+    await q.query(
+      `DROP TRIGGER IF EXISTS wallet_ledger_entries_append_only_trg ON wallet_ledger_entries`,
+    );
     await q.query(`DROP TABLE IF EXISTS wallet_ledger_entries`);
-    await q.query(`DROP FUNCTION IF EXISTS wallet_ledger_entries_append_only()`);
-    await q.query(`DROP TRIGGER IF EXISTS wager_transactions_guard_terminal_trg ON wager_transactions`);
+    await q.query(
+      `DROP FUNCTION IF EXISTS wallet_ledger_entries_append_only()`,
+    );
+    await q.query(
+      `DROP TRIGGER IF EXISTS wager_transactions_guard_terminal_trg ON wager_transactions`,
+    );
     await q.query(`DROP TABLE IF EXISTS wager_transactions`);
-    await q.query(`DROP FUNCTION IF EXISTS wager_transactions_guard_terminal()`);
+    await q.query(
+      `DROP FUNCTION IF EXISTS wager_transactions_guard_terminal()`,
+    );
     await q.query(`DROP TABLE IF EXISTS wallets`);
   }
 }

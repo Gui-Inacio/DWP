@@ -19,3 +19,34 @@ export class CurrencyMismatchError extends DomainError {
     super('CURRENCY_MISMATCH', `Currency mismatch: ${expected} vs ${received}`);
   }
 }
+
+export class InsufficientFundsError extends DomainError {
+  constructor(walletId: string) {
+    super('INSUFFICIENT_FUNDS', `Insufficient funds in wallet ${walletId}`);
+  }
+}
+
+export class InvalidWalletOperationError extends DomainError {
+  constructor(message: string) {
+    super('INVALID_WALLET_OPERATION', message);
+  }
+}
+
+export class InvalidLedgerEntryError extends DomainError {
+  constructor(message: string) {
+    super('INVALID_LEDGER_ENTRY', message);
+  }
+}
+
+export class InvalidWagerTransactionError extends DomainError {
+  constructor(message: string) {
+    super('INVALID_WAGER_TRANSACTION', message);
+  }
+}
+
+/** Erro de programação: tentativa de transição inválida (ex.: sair de um estado terminal). */
+export class InvalidTransactionStateError extends DomainError {
+  constructor(message: string) {
+    super('INVALID_TRANSACTION_STATE', message);
+  }
+}
