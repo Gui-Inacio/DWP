@@ -3,12 +3,15 @@ import {
   InvalidWagerTransactionError,
 } from '../../../shared/domain/errors';
 import { Money } from '../../../shared/domain/Money';
-import { LedgerDirection, oppositeOf } from '../../wallets/domain/LedgerDirection';
+import {
+  LedgerDirection,
+  oppositeOf,
+} from '../../wallets/domain/LedgerDirection';
 import { FailureCode } from './FailureCode';
 import { WagerTransactionKind as Kind } from './WagerTransactionKind';
 import { WagerTransactionStatus as Status } from './WagerTransactionStatus';
 
-/** Quais kinds podem ser referenciados por cada kind (seção 7, regra 3). */
+/** Quais kinds podem ser referenciados por cada kind. */
 const ALLOWED_REFERENCE_KINDS: Partial<Record<Kind, readonly Kind[]>> = {
   [Kind.Win]: [Kind.Bet], // referência opcional
   [Kind.Refund]: [Kind.Bet], // obrigatória
@@ -106,7 +109,9 @@ export class WagerTransaction {
   /** Nasce em PENDING. OPENING é interno e não pode ser criado por aqui. */
   static create(props: CreateWagerTransactionProps): WagerTransaction {
     if (props.kind === Kind.Opening) {
-      throw new InvalidWagerTransactionError('OPENING is internal and cannot be submitted');
+      throw new InvalidWagerTransactionError(
+        'OPENING is internal and cannot be submitted',
+      );
     }
     return WagerTransaction.build(props);
   }
@@ -152,16 +157,26 @@ export class WagerTransaction {
     }
     // Operações que movem saldo precisam de valor > 0; LOSS pode ter 0.00.
     if (kind !== Kind.Loss && !money.isPositive()) {
-      throw new InvalidWagerTransactionError(`${kind} amount must be greater than zero`);
+      throw new InvalidWagerTransactionError(
+        `${kind} amount must be greater than zero`,
+      );
     }
     if ((kind === Kind.Refund || kind === Kind.Rollback) && !reference) {
-      throw new InvalidWagerTransactionError(`${kind} requires referenceExternalTransactionId`);
+      throw new InvalidWagerTransactionError(
+        `${kind} requires referenceExternalTransactionId`,
+      );
     }
     if (reference !== undefined && !ALLOWED_REFERENCE_KINDS[kind]) {
-      throw new InvalidWagerTransactionError(`${kind} does not accept a reference`);
+      throw new InvalidWagerTransactionError(
+        `${kind} does not accept a reference`,
+      );
     }
 
-    return new WagerTransaction({ ...props, status: Status.Pending, referenceAttempts: 0 });
+    return new WagerTransaction({
+      ...props,
+      status: Status.Pending,
+      referenceAttempts: 0,
+    });
   }
 
   // ------------------------------------------------------------------ getters
@@ -189,7 +204,11 @@ export class WagerTransaction {
 
   // -------------------------------------------------------------- transições
   /** Grava tudo de uma vez: depois de terminal, nada mais pode mudar (nem no banco). */
-  markProcessed(referenceTransactionId: string | undefined, at: Date, observedBalance: Money): void {
+  markProcessed(
+    referenceTransactionId: string | undefined,
+    at: Date,
+    observedBalance: Money,
+  ): void {
     this.assertNotTerminal('markProcessed');
     if (this.hasReference() && !referenceTransactionId) {
       throw new InvalidTransactionStateError(
@@ -207,7 +226,9 @@ export class WagerTransaction {
   markPendingReference(nextAttemptAt: Date): void {
     this.assertNotTerminal('markPendingReference');
     if (!this.hasReference()) {
-      throw new InvalidTransactionStateError(`${this.kind} has no reference to wait for`);
+      throw new InvalidTransactionStateError(
+        `${this.kind} has no reference to wait for`,
+      );
     }
     this._status = Status.PendingReference;
     this._referenceAttempts += 1;
@@ -272,7 +293,9 @@ export class WagerTransaction {
         return LedgerDirection.Credit;
       case Kind.Rollback:
         if (!reference) {
-          throw new InvalidWagerTransactionError('ROLLBACK needs its reference to define the direction');
+          throw new InvalidWagerTransactionError(
+            'ROLLBACK needs its reference to define the direction',
+          );
         }
         return oppositeOf(reference.ledgerDirectionFor());
       case Kind.Loss:
