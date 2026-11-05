@@ -50,3 +50,32 @@ export class InvalidTransactionStateError extends DomainError {
     super('INVALID_TRANSACTION_STATE', message);
   }
 }
+
+/** Campo obrigatório ausente/malformado: payload inválido (400). */
+export class InvalidRequestError extends DomainError {
+  constructor(message: string) {
+    super('INVALID_REQUEST', message);
+  }
+}
+
+/** Mesma idempotency key com payload diferente, ou externalTransactionId já usado com outra key (409). */
+export class IdempotencyConflictError extends DomainError {
+  constructor(message: string) {
+    super('IDEMPOTENCY_CONFLICT', message);
+  }
+}
+
+export class WalletNotFoundError extends DomainError {
+  constructor(walletId: string) {
+    super('WALLET_NOT_FOUND', `Wallet ${walletId} not found`);
+  }
+}
+
+export class WalletAlreadyExistsError extends DomainError {
+  constructor(playerId: string, currency: string) {
+    super(
+      'WALLET_ALREADY_EXISTS',
+      `Player ${playerId} already has a ${currency} wallet`,
+    );
+  }
+}
